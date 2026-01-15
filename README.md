@@ -6,6 +6,40 @@ You are responsible for ensuring that your use of this software complies with al
 
 The authors do not endorse or support unauthorized modification, redistribution, or circumvention of software protections.
 
+## Usage
+Copy the generated DLL files into the game's main folder. Example: `C:\Program Files (x86)\Steam\steamapps\common\Hi-Fi RUSH\Hibiki\Binaries\Win64\`
+The bootstrap expects the target DLL to be named:
+```
+hibiki.dll
+```
+
+For example, if you want to run **UE4SS**, rename `UE4SS.dll` to `hibiki.dll` and make sure it is located in the same folder as `hibiki_bootstrap.dll`.
+
+### ⚠ Important
+Only **one** DLL proxy can be used at a time.
+If another proxy DLL is already present in the game folder, remove it first, or the game may fail to start or crash.
+
+For **UE4SS** specifically, make sure to remove `dwmapi.dll`.
+
+## TL;DR
+- Copy the DLLs into the game's `Win64` folder.
+- Rename the DLL you want to load to `hibiki.dll`.
+- Only one proxy DLL is allowed - remove any others (for UE4SS, delete `dwmapi.dll`)
+
+## Example Folder Layout
+If you're using **UE4SS**, your folder should look like this:
+```
+Hi-Fi RUSH
+└─ Hibiki
+   └─ Binaries
+      └─ Win64
+         ├─ hibiki_bootstrap.dll
+         ├─ hibiki.dll        (renamed from UE4SS.dll)
+         ├─ XAPOFX1_5.dll
+         ├─ Hi-Fi-RUSH.exe
+         └─ ...
+```
+
 ## Requirements
 ### Supported platforms
 - Windows (x86_64): main platform
@@ -16,11 +50,6 @@ The authors do not endorse or support unauthorized modification, redistribution,
 - Compiler / build tools
   - MSVC (Visual Studio 2019/2022 recommended) for native Windows builds
   - Alternatively MinGW-w64 for GCC-based builds on cross environments
-
-### Windows SDK / libraries
-This project links against Windows system libraries:
-- dbghelp (used by gen_proxy)
-- Shlwapi / shlwapi
 
 ### Assembly (MSVC builds)
 When building with MSVC:
