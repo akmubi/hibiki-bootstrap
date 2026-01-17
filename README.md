@@ -7,23 +7,24 @@ You are responsible for ensuring that your use of this software complies with al
 The authors do not endorse or support unauthorized modification, redistribution, or circumvention of software protections.
 
 ## Usage
-Copy the generated DLL files into the game's main folder. Example: `C:\Program Files (x86)\Steam\steamapps\common\Hi-Fi RUSH\Hibiki\Binaries\Win64\`
-The bootstrap expects the target DLL to be named:
+Copy the generated DLL files into the game's main folder. Example:
 ```
-hibiki.dll
+C:\Program Files (x86)\Steam\steamapps\common\Hi-Fi RUSH\Hibiki\Binaries\Win64\`
 ```
 
-For example, if you want to run **UE4SS**, rename `UE4SS.dll` to `hibiki.dll` and make sure it is located in the same folder as `hibiki_bootstrap.dll`.
+## Target DLL naming and load order
+At runtime, the bootstrap DLL attempts to load the target DLL in the following order:
+- `UE4SS.dll`
+- `hibiki.dll` (fallback)
 
 ### ⚠ Important
-Only **one** DLL proxy can be used at a time.
-If another proxy DLL is already present in the game folder, remove it first, or the game may fail to start or crash.
-
-For **UE4SS** specifically, make sure to remove `dwmapi.dll`.
+- Only **one** DLL proxy can be used at a time.
+- If another proxy DLL is already present in the game folder, remove it first, or the game may fail to start or crash.
+- For **UE4SS** specifically, make sure to remove `dwmapi.dll`.
 
 ## TL;DR
 - Copy the DLLs into the game's `Win64` folder.
-- Rename the DLL you want to load to `hibiki.dll`.
+- If it's not `UE4SS.dll` - rename the DLL you want to load to `hibiki.dll`.
 - Only one proxy DLL is allowed - remove any others (for UE4SS, delete `dwmapi.dll`)
 
 ## Example Folder Layout
