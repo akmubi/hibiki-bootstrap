@@ -9,7 +9,7 @@ The authors do not endorse or support unauthorized modification, redistribution,
 ## Usage
 Copy the generated DLL files into the game's main folder. Example:
 ```
-C:\Program Files (x86)\Steam\steamapps\common\Hi-Fi RUSH\Hibiki\Binaries\Win64\`
+C:\Program Files (x86)\Steam\steamapps\common\Hi-Fi RUSH\Hibiki\Binaries\Win64`
 ```
 
 ## Target DLL naming and load order
@@ -35,7 +35,20 @@ Hi-Fi RUSH
    └─ Binaries
       └─ Win64
          ├─ hibiki_bootstrap.dll
-         ├─ hibiki.dll        (renamed from UE4SS.dll)
+         ├─ UE4SS.dll
+         ├─ XAPOFX1_5.dll
+         ├─ Hi-Fi-RUSH.exe
+         └─ ...
+```
+
+If you're using something else, your folder should look like this:
+```
+Hi-Fi RUSH
+└─ Hibiki
+   └─ Binaries
+      └─ Win64
+         ├─ hibiki_bootstrap.dll
+         ├─ hibiki.dll             <----- HERE
          ├─ XAPOFX1_5.dll
          ├─ Hi-Fi-RUSH.exe
          └─ ...
