@@ -4,8 +4,10 @@
 #include <stdint.h>
 #include <stdarg.h>
 
-#define DLL_NAME     "hibiki.dll"
-#define CRC_RVA      0xCEB3EAC
+#define DLL_NAME_MAIN     "UE4SS.dll"
+#define DLL_NAME_FALLBACK "hibiki.dll"
+
+#define CRC_RVA      0xCEB3EAC // TODO: use signature search instead
 #define NT_COPY_SIZE 0x20
 
 #define ASSERT(expr)                     \
@@ -86,8 +88,13 @@ on_crc(CONTEXT *ctx)
       }
     }
 
-    if (!LoadLibraryA(DLL_NAME)) {
-      errorf("LoadLibraryA", "Failed to load module '%s': %d", DLL_NAME, GetLastError());
+    if (!LoadLibraryA(DLL_NAME_MAIN)) {
+      DWORD error_code_main = GetLastError();
+      if (!LoadLibraryA(DLL_NAME_FALLBACK)) {
+        DWORD error_code_fallback = GetLastError();
+        errorf("LoadLibraryA", "Failed to load both main ('%s' : %d) and fallback ('%s' : %d) modules",
+               DLL_NAME_MAIN, error_code_main, DLL_NAME_FALLBACK, error_code_fallback);
+      }
     }
   }
 
