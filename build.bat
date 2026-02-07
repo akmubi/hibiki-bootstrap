@@ -2,14 +2,14 @@
 setlocal
 cd /d "%~dp0"
 
-set OUT_DIR=out
+set OUT_DIR=build
 set TARGET_DLL=XAPOFX1_5
 set REAL_DLL=%SystemRoot%\System32\%TARGET_DLL%.dll
 
 mkdir %OUT_DIR% 2>nul
 
 echo [1/5] Compiling dll_proxy_gen...
-cl /nologo /O2 /W4 /D_CRT_SECURE_NO_WARNINGS dll_proxy_gen.c /Fe:%OUT_DIR%\dll_proxy_gen.exe ImageHlp.lib
+cl /nologo /O2 /W4 /D_CRT_SECURE_NO_WARNINGS dll_proxy_gen.c /Fo:%OUT_DIR%\dll_proxy_gen.obj /Fe:%OUT_DIR%\dll_proxy_gen.exe ImageHlp.lib
 if errorlevel 1 exit /b 1
 
 echo [2/5] Generating proxy files...
