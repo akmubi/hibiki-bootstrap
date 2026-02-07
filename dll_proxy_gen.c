@@ -214,18 +214,16 @@ path_filename_noext(const TCHAR *in, TCHAR *out, size_t out_cap)
 int
 _tmain(int argc, TCHAR *argv[])
 {
-  if (argc < 4) {
-    _ftprintf(stderr, _T("Usage: %s <input_system_dll> <output_dir> <mod_loader_path>\n"), argv[0]);
+  if (argc < 3) {
+    _ftprintf(stderr, _T("Usage: %s <input_system_dll> <output_dir>\n"), argv[0]);
     _ftprintf(stderr,
-              _T("Example: %s C:\\Windows\\System32\\dwmapi.dll out ")
-              _T("mods\\loader.dll\n"),
+              _T("Example: %s C:\\Windows\\System32\\XAPOFX1_5.dll out\n"),
               argv[0]);
     return 1;
   }
 
   const TCHAR *input_dll  = argv[1];
   const TCHAR *out_dir    = argv[2];
-  const TCHAR *loader_dll = argv[3];
 
   export_list_t exports = {0};
   if (!dump_exports(input_dll, &exports)) {
@@ -239,12 +237,12 @@ _tmain(int argc, TCHAR *argv[])
   TCHAR def_path[MAX_PATH]  = {0};
   TCHAR masm_path[MAX_PATH] = {0};
   TCHAR gas_path[MAX_PATH]  = {0};
-  TCHAR c_path[MAX_PATH]    = {0};
+  TCHAR h_path[MAX_PATH]    = {0};
 
   _sntprintf_s(def_path, sizeof(def_path), _TRUNCATE, _T("%s\\%s.def"), out_dir, base_noext);
   _sntprintf_s(masm_path, sizeof(masm_path), _TRUNCATE, _T("%s\\%s.asm"), out_dir, base_noext);
   _sntprintf_s(gas_path, sizeof(gas_path), _TRUNCATE, _T("%s\\%s_gas.S"), out_dir, base_noext);
-  _sntprintf_s(c_path, sizeof(c_path), _TRUNCATE, _T("%s\\dllmain.c"), out_dir);
+  _sntprintf_s(h_path, sizeof(h_path), _TRUNCATE, _T("%s\\proxy.h"), out_dir);
 
   // DEF
   FILE *fdef = _tfopen(def_path, _T("wb"));
@@ -315,108 +313,72 @@ _tmain(int argc, TCHAR *argv[])
 
   fclose(fgas);
 
-  // dllmain.c
-  FILE *fc = _tfopen(c_path, _T("wb"));
-  if (!fc) {
-    _ftprintf(stderr, _T("Cannot write %s\n"), c_path);
+  // proxy.h - header file with proxy infrastructure
+  FILE *fh = _tfopen(h_path, _T("wb"));
+  if (!fh) {
+    _ftprintf(stderr, _T("Cannot write %s\n"), h_path);
     export_list_delete(&exports);
     return 5;
   }
 
-  #if 0
-  #endif
-
-  fprintf(fc,
+  fprintf(fh,
+          "#ifndef PROXY_H\n"
+          "#define PROXY_H\n"
+          "\n"
           "#ifndef WIN32_LEAN_AND_MEAN\n"
           "#define WIN32_LEAN_AND_MEAN\n"
           "#endif\n"
           "#include <windows.h>\n"
-          "#include <stdio.h>\n"
           "#include <shlwapi.h>\n"
-          "#pragma comment(lib, \"Shlwapi.lib\")\n\n"
-          "HMODULE original_dll = NULL;\n"
-          "void   *m_procs[%zu] = {0};\n"
+          "#pragma comment(lib, \"Shlwapi.lib\")\n"
           "\n"
-          "static void\n"
-          "load_original_dll(void)\n"
+          "/* Proxy configuration */\n"
+          "#define PROXY_EXPORT_COUNT %zu\n"
+          "\n"
+          "/* Proxy state - actual definitions */\n"
+          "HMODULE original_dll = NULL;\n"
+          "void   *m_procs[PROXY_EXPORT_COUNT] = {0};\n"
+          "\n"
+          "static inline void\n"
+          "proxy_load_original_dll(void)\n"
           "{\n"
-          "  if (original_dll) {\n"
-          "    return;\n"
-          "  }\n\n"
+          "  if (original_dll) return;\n"
+          "\n"
           "  wchar_t sysdir[MAX_PATH];\n"
-          "  if (!GetSystemDirectoryW(sysdir, MAX_PATH)) {\n"
-          "    return;\n"
-          "  }\n\n"
+          "  if (!GetSystemDirectoryW(sysdir, MAX_PATH)) return;\n"
+          "\n"
           "  wchar_t path[MAX_PATH];\n"
           "  lstrcpynW(path, sysdir, MAX_PATH);\n"
-          "  if (!PathAppendW(path, L\"\\\\%s.dll\")) {\n"
-          "    return;\n"
-          "  }\n\n"
+          "  if (!PathAppendW(path, L\"\\\\%s.dll\")) return;\n"
+          "\n"
           "  original_dll = LoadLibraryW(path);\n"
           "}\n"
           "\n"
-          "static void setup_functions(void) {\n"
-          "  if (!original_dll) {\n"
-          "    return;\n"
-          "  }\n",
+          "static inline void\n"
+          "proxy_setup_functions(void)\n"
+          "{\n"
+          "  if (!original_dll) return;\n"
+          "\n",
           (unsigned long long)exports.count,
           base_noext);
 
   for (size_t i = 0; i < exports.count; i++) {
     export_t *e = &exports.entries[i];
     if (e->is_named) {
-      fprintf(fc, "  m_procs[%zu] = (void*)GetProcAddress(original_dll, \"%s\");\n", i, e->name);
+      fprintf(fh, "  m_procs[%zu] = (void*)GetProcAddress(original_dll, \"%s\");\n", i, e->name);
     } else {
-      fprintf(fc, "  m_procs[%zu] = (void*)GetProcAddress(original_dll, (LPCSTR)%u);\n", i, e->ordinal);
+      fprintf(fh, "  m_procs[%zu] = (void*)GetProcAddress(original_dll, (LPCSTR)%u);\n", i, e->ordinal);
     }
   }
 
-#ifdef UNICODE
-  _ftprintf(fc,
-            "}\n\n"
-            "BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)\n"
-            "{\n"
-            "  if (reason == DLL_PROCESS_ATTACH) {\n"
-            "    DisableThreadLibraryCalls(hinst);\n"
-            "    load_original_dll();\n"
-            "    setup_functions();\n"
-            "    CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)LoadLibraryW, "
-            "(LPVOID)L\"%ls\", 0, NULL);\n"
-            "  } else if (reason == DLL_PROCESS_DETACH) {\n"
-            "    if (original_dll) {\n"
-            "      FreeLibrary(original_dll);\n"
-            "    }\n"
-            "  }\n"
-            "  return TRUE;\n"
-            "}\n",
-            loader_dll);
-#else
-  fprintf(fc,
-          "}\n\n"
-          "BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)\n"
-          "{\n"
-          "  if (reason == DLL_PROCESS_ATTACH) {\n"
-          "    DisableThreadLibraryCalls(hinst);\n"
-          "    load_original_dll();\n"
-          "    setup_functions();\n"
-          "    HMODULE h_mod = LoadLibraryA(\"%s\");\n"
-          "    if (!h_mod) {\n"
-          "      char buf[256];\n"
-          "      snprintf(buf, sizeof(buf), \"LoadLibrarayA failed (error: %%lu)\", GetLastError());\n"
-          "      MessageBox(NULL, buf, \"LoadLibraryA\", MB_OK);\n"
-          "    }\n"
-          "  } else if (reason == DLL_PROCESS_DETACH) {\n"
-          "    if (original_dll) {\n"
-          "      FreeLibrary(original_dll);\n"
-          "    }\n"
-          "  }\n"
-          "  return TRUE;\n"
-          "}\n",
-          loader_dll);
-#endif
-  fclose(fc);
+  fprintf(fh,
+          "}\n"
+          "\n"
+          "#endif /* PROXY_H */\n");
 
-  _tprintf(_T("Wrote:\n  %s\n  %s\n  %s\n  %s\n"), def_path, masm_path, gas_path, c_path);
+  fclose(fh);
+
+  _tprintf(_T("Wrote:\n  %s\n  %s\n  %s\n  %s\n"), def_path, masm_path, gas_path, h_path);
   export_list_delete(&exports);
   return 0;
 }
