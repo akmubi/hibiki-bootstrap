@@ -16,7 +16,7 @@ The authors do not endorse or support unauthorized modification, redistribution,
 3. **Remove any other proxy DLLs** (e.g. `dwmapi.dll`, `dinput8.dll`)
 
 ### Xbox
-1. Copy `dsound.dll` to `<game>/Hibiki/Binaries/Win64/`
+1. Copy `dsound.dll` to `<game>/Hibiki/Binaries/WinGDK/`
 2. Place `hibiki.dll` or `UE4SS.dll` in the same folder
 
 ## Building
