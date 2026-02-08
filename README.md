@@ -10,40 +10,35 @@ The authors do not endorse or support unauthorized modification, redistribution,
 
 ## Installation
 
+### Steam/Epic Games
 1. Copy `XAPOFX1_5.dll` to `<game>/Hibiki/Binaries/Win64/`
 2. Place `hibiki.dll` or `UE4SS.dll` in the same folder
-3. **Remove any other proxy DLLs** (e.g. `dwmapi.dll`, `dinput8.dll` etc.)
+3. **Remove any other proxy DLLs** (e.g. `dwmapi.dll`, `dinput8.dll`)
+
+### Xbox
+1. Copy `dsound.dll` to `<game>/Hibiki/Binaries/Win64/`
+2. Place `hibiki.dll` or `UE4SS.dll` in the same folder
 
 ## Building
 
-Requirements:
+### Requirements
 - MSVC (Visual Studio 2019/2022)
 - Windows SDK
 
-Run `build.bat` from x64 Native Tools Command Prompt
+### Build Commands
 
-## Configuration
-
-Edit `main.c`:
-```c
-#define DLL_MAIN     "hibiki.dll"      // Change target DLL here
-#define DLL_FALLBACK "UE4SS.dll"
-```
-
-Edit `build.bat`:
+Run from **x64 Native Tools Command Prompt**:
 ```batch
-REM Change proxy DLL here
-set TARGET_DLL=XAPOFX1_5
+# For Steam/Epic Games
+build.bat steam
+# or
+build.bat epic
+
+# For Xbox
+build.bat xbox
 ```
 
-## How It Works
-
-1. Proxies `XAPOFX1_5.dll` to load early
-2. Saves original `NtProtectVirtualMemory` bytes before unpacker modifies it
-3. Polls every 1ms to detect when unpacker finishes
-4. Restores NtPVM and loads `hibiki.dll` or `UE4SS.dll`
-
-## Important
-
-- ⚠️ Only one proxy DLL allowed - remove others or game crashes
-- Built for Hi-Fi RUSH (patch 10) - may need adjustments for other versions
+**Outputs:**
+- `out/steam/XAPOFX1_5.dll` - Steam version
+- `out/epic/XAPOFX1_5.dll` - Epic Games version
+- `out/xbox/dsound.dll` - Xbox version
