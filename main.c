@@ -11,9 +11,11 @@
 #define LOG(...)
 #endif
 
-#define NT_COPY_SIZE 0x20
 #define DLL_MAIN     "hibiki.dll"
 #define DLL_FALLBACK "UE4SS.dll"
+
+#if defined STEAM || defined EPIC
+#define NT_COPY_SIZE 0x20
 
 typedef NTSTATUS (NTAPI *NtProtectVirtualMemory_t)(
   HANDLE,
@@ -71,16 +73,6 @@ restore_nt_protect_virtual_memory(void)
   g_nt_copy(GetCurrentProcess(), &addr, &size, old_prot, &old_prot);
 }
 
-static void
-setup_debug_console(void)
-{
-  AllocConsole();
-  FILE *f_out, *f_err;
-  freopen_s(&f_out, "CONOUT$", "w", stdout);
-  freopen_s(&f_err, "CONOUT$", "w", stderr);
-  LOG("[proxy] Debug console initialized\n");
-}
-
 static DWORD WINAPI
 watcher_thread(LPVOID param)
 {
@@ -112,6 +104,17 @@ watcher_thread(LPVOID param)
   }
   return 0;
 }
+#endif
+
+static void
+setup_debug_console(void)
+{
+  AllocConsole();
+  FILE *f_out, *f_err;
+  freopen_s(&f_out, "CONOUT$", "w", stdout);
+  freopen_s(&f_err, "CONOUT$", "w", stderr);
+  LOG("[proxy] Debug console initialized\n");
+}
 
 BOOL WINAPI
 DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
@@ -122,7 +125,8 @@ DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
 #ifdef DEBUG
     setup_debug_console();
 #endif
-    
+
+#if defined STEAM || defined EPIC
     save_nt_protect_virtual_memory();
 
     LOG("[proxy] NtProtectVirualMemory original bytes:");
@@ -130,11 +134,31 @@ DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
       LOG(" %02X", g_nt_orig_bytes[i]);
     }
     LOG("\n");
+#endif
 
     proxy_load_original_dll();
     proxy_setup_functions();
 
+#if defined STEAM || defined EPIC
     CreateThread(NULL, 0, watcher_thread, NULL, 0, NULL);
+#else
+    LOG("[proxy] Loading %s...\n", DLL_MAIN);
+    HMODULE h = LoadLibraryA(DLL_MAIN);
+    if (!h) {
+      DWORD main_err = GetLastError();
+      LOG("[proxy] Failed to load %s (error %lu), trying %s...\n", DLL_MAIN, main_err, DLL_FALLBACK);
+      h = LoadLibraryA(DLL_FALLBACK);
+      if (!h) {
+        DWORD fallback_err = GetLastError();
+        LOG("[proxy] Failed to load fallback: %s: %lu, %s: %lu\n",
+          DLL_MAIN, main_err, DLL_FALLBACK, fallback_err);
+      } else {
+        LOG("[proxy] Successfully loaded %s at %p\n", DLL_FALLBACK, (void*)h);
+      }
+    } else {
+      LOG("[proxy] Successfully loaded %s at %p\n", DLL_MAIN, (void*)h);
+    }
+#endif
   } else if (reason == DLL_PROCESS_DETACH) {
     if (original_dll) {
       FreeLibrary(original_dll);

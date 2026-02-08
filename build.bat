@@ -2,14 +2,45 @@
 setlocal
 cd /d "%~dp0"
 
-set OUT_DIR=build
-set TARGET_DLL=XAPOFX1_5
-set REAL_DLL=%SystemRoot%\System32\%TARGET_DLL%.dll
+if "%~1"=="" (
+    echo Usage: build.bat [steam^|epic^|xbox]
+    echo   steam^|epic - Build XAPOFX1_5.dll for Steam/Epic Games ^(protected^)
+    echo   xbox       - Build dsound.dll for Xbox ^(unprotected^)
+    exit /b 1
+)
+
+set BUILD_TYPE=%~1
+
+if /i "%BUILD_TYPE%"=="steam" (
+    set TARGET_DLL=XAPOFX1_5
+    set REAL_DLL=%SystemRoot%\System32\XAPOFX1_5.dll
+    set DEFINES=/DSTEAM
+    set OUT_SUBDIR=steam
+) else if /i "%BUILD_TYPE%"=="epic" (
+    set TARGET_DLL=XAPOFX1_5
+    set REAL_DLL=%SystemRoot%\System32\XAPOFX1_5.dll
+    set DEFINES=/DEPIC
+    set OUT_SUBDIR=epic
+) else if /i "%BUILD_TYPE%"=="xbox" (
+    set TARGET_DLL=dsound
+    set REAL_DLL=%SystemRoot%\System32\dsound.dll
+    set DEFINES=/DXBOX
+    set OUT_SUBDIR=xbox
+) else (
+    echo ERROR: Unknown build type '%BUILD_TYPE%'
+    echo Valid options: steam, epic, xbox
+    exit /b 1
+)
+
+set OUT_DIR=build\%OUT_SUBDIR%
 
 mkdir %OUT_DIR% 2>nul
 
+echo [Building %TARGET_DLL%.dll for %BUILD_TYPE%]
+echo.
+
 echo [1/5] Compiling dll_proxy_gen...
-cl /nologo /O2 /W4 /D_CRT_SECURE_NO_WARNINGS dll_proxy_gen.c /Fo:%OUT_DIR%\dll_proxy_gen.obj /Fe:%OUT_DIR%\dll_proxy_gen.exe ImageHlp.lib
+cl /nologo /O2 /W4 /D_CRT_SECURE_NO_WARNINGS dll_proxy_gen.c /Fe:%OUT_DIR%\dll_proxy_gen.exe ImageHlp.lib
 if errorlevel 1 exit /b 1
 
 echo [2/5] Generating proxy files...
@@ -21,7 +52,7 @@ ml64 /nologo /c /Fo %OUT_DIR%\stubs.obj %OUT_DIR%\%TARGET_DLL%.asm
 if errorlevel 1 exit /b 1
 
 echo [4/5] Compiling main.c...
-cl /nologo /O2 /MD /W3 /c /I%OUT_DIR% /DWIN32_LEAN_AND_MEAN /D_CRT_SECURE_NO_WARNINGS /Fo:%OUT_DIR%\main.obj main.c
+cl /nologo /O2 /MD /W3 /c /I%OUT_DIR% /DWIN32_LEAN_AND_MEAN /D_CRT_SECURE_NO_WARNINGS %DEFINES% /Fo:%OUT_DIR%\main.obj main.c
 if errorlevel 1 exit /b 1
 
 echo [5/5] Linking %TARGET_DLL%.dll...
