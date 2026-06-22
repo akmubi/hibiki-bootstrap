@@ -3,13 +3,16 @@ setlocal
 cd /d "%~dp0"
 
 if "%~1"=="" (
-    echo Usage: build.bat [steam^|epic^|xbox]
+    echo Usage: build.bat [steam^|epic^|xbox] [loader-dll]
     echo   steam^|epic - Build XAPOFX1_5.dll for Steam/Epic Games ^(protected^)
     echo   xbox       - Build dsound.dll for Xbox ^(unprotected^)
+    echo   loader-dll - DLL loaded by the bootstrap ^(default: hibiki.dll^)
     exit /b 1
 )
 
 set BUILD_TYPE=%~1
+set LOADER_DLL=%~2
+if "%LOADER_DLL%"=="" set LOADER_DLL=hibiki.dll
 
 if /i "%BUILD_TYPE%"=="steam" (
     set TARGET_DLL=XAPOFX1_5
@@ -37,6 +40,7 @@ set OUT_DIR=build\%OUT_SUBDIR%
 mkdir %OUT_DIR% 2>nul
 
 echo [Building %TARGET_DLL%.dll for %BUILD_TYPE%]
+echo [Loader DLL: %LOADER_DLL%]
 echo.
 
 echo [1/5] Compiling dll_proxy_gen...
@@ -52,7 +56,7 @@ ml64 /nologo /c /Fo %OUT_DIR%\stubs.obj %OUT_DIR%\%TARGET_DLL%.asm
 if errorlevel 1 exit /b 1
 
 echo [4/5] Compiling main.c...
-cl /nologo /O2 /MD /W3 /c /I%OUT_DIR% /DWIN32_LEAN_AND_MEAN /D_CRT_SECURE_NO_WARNINGS %DEFINES% /Fo:%OUT_DIR%\main.obj main.c
+cl /nologo /O2 /MD /W3 /c /I%OUT_DIR% /DWIN32_LEAN_AND_MEAN /D_CRT_SECURE_NO_WARNINGS %DEFINES% /DBOOTSTRAP_DLL=\"%LOADER_DLL%\" /Fo:%OUT_DIR%\main.obj main.c
 if errorlevel 1 exit /b 1
 
 echo [5/5] Linking %TARGET_DLL%.dll...
