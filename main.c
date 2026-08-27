@@ -13,7 +13,7 @@
 #endif
 
 #ifndef BOOTSTRAP_DLL
-#define BOOTSTRAP_DLL "hibiki.dll"
+#define BOOTSTRAP_DLL "overdub.dll"
 #endif
 
 #if defined STEAM || defined EPIC
