@@ -10,35 +10,67 @@ The authors do not endorse or support unauthorized modification, redistribution,
 
 ## Installation
 
+Use a bootstrap build configured for the DLL you want to load.
+
+For example, a bootstrap built for `foo.dll` will only try to load `foo.dll`.
+
 ### Steam/Epic Games
-1. Copy `XAPOFX1_5.dll` to `<game>/Hibiki/Binaries/Win64/`
-2. Place `hibiki.dll` or `UE4SS.dll` in the same folder
-3. **Remove any other proxy DLLs** (e.g. `dwmapi.dll`, `dinput8.dll`)
+1. Copy `XAPOFX1_5.dll` to `<game>/Hibiki/Binaries/Win64/`.
+2. Place target DLL, such as `overdub.dll` or `UE4SS.dll` in the same directory.
+3. **Remove any other proxy DLLs** (e.g. `dwmapi.dll`, `dinput8.dll`).
+
+Example:
+```
+<game>/Hibiki/Binaries/Win64/
+|-- XAPOFX1_5.dll
+`-- overdub.dll
+```
 
 ### Xbox
-1. Copy `dsound.dll` to `<game>/Hibiki/Binaries/WinGDK/`
-2. Place `hibiki.dll` or `UE4SS.dll` in the same folder
+1. Copy `dsound.dll` to `<game>/Hibiki/Binaries/WinGDK/`.
+2. Place target DLL in the same directory.
+Example:
+```
+<game>/Hibiki/Binaries/WinGDK/
+|-- dsound.dll
+`-- overdub.dll
+```
 
 ## Building
 
 ### Requirements
-- MSVC (Visual Studio 2019/2022)
+- Visual Studio 2019/2022
+- MSVC x64 build tools
 - Windows SDK
 
 ### Build Commands
 
-Run from **x64 Native Tools Command Prompt**:
-```batch
-# For Steam/Epic Games
-build.bat steam
-# or
-build.bat epic
+Run the commands from an **x64 Native Tools Command Prompt for Visual Studio**.
 
-# For Xbox
-build.bat xbox
+Steam:
+```batch
+build.bat steam <target-dll-name>
+```
+
+Epic Games:
+```batch
+build.bat epic <target-dll-name>
+```
+
+Xbox:
+```batch
+build.bat xbox <target-dll-name>
+```
+
+Replace `<target-dll-name>` with the exact DLL filename that the bootstrap should load.
+
+The DLL argument is optional. When omitted, it defaults to `hibiki.dll`:
+```batch
+build.bat steam
 ```
 
 **Outputs:**
-- `out/steam/XAPOFX1_5.dll` - Steam version
-- `out/epic/XAPOFX1_5.dll` - Epic Games version
-- `out/xbox/dsound.dll` - Xbox version
+- `build/steam/XAPOFX1_5.dll`
+- `build/epic/XAPOFX1_5.dll`
+- `build/xbox/dsound.dll`
+
