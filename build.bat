@@ -3,9 +3,10 @@ setlocal
 cd /d "%~dp0"
 
 if "%~1"=="" (
-    echo Usage: build.bat [steam^|epic^|xbox] [loader-dll]
+    echo Usage: build.bat [steam^|epic^|xbox|update9] [loader-dll]
     echo   steam^|epic - Build XAPOFX1_5.dll for Steam/Epic Games ^(protected^)
     echo   xbox       - Build dsound.dll for Xbox ^(unprotected^)
+    echo   update9    - Build XAPOFX1_5.dll for Update-9 version of the game
     echo   loader-dll - DLL loaded by the bootstrap ^(default: hibiki.dll^)
     exit /b 1
 )
@@ -29,9 +30,14 @@ if /i "%BUILD_TYPE%"=="steam" (
     set REAL_DLL=%SystemRoot%\System32\dsound.dll
     set DEFINES=/DXBOX
     set OUT_SUBDIR=xbox
+) else if /i "%BUILD_TYPE%"=="update9" (
+    set TARGET_DLL=XAPOFX1_5
+    set REAL_DLL=%SystemRoot%\System32\XAPOFX1_5.dll
+    set DEFINES=/DUPDATE9
+    set OUT_SUBDIR=update9
 ) else (
     echo ERROR: Unknown build type '%BUILD_TYPE%'
-    echo Valid options: steam, epic, xbox
+    echo Valid options: steam, epic, xbox, update9
     exit /b 1
 )
 
