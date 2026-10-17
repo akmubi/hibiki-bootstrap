@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 if "%~1"=="" (
-    echo Usage: build.bat [steam^|epic^|xbox|update9] [loader-dll]
+    echo Usage: build.bat [steam^|epic^|xbox^|update9] [loader-dll]
     echo   steam^|epic - Build XAPOFX1_5.dll for Steam/Epic Games ^(protected^)
     echo   xbox       - Build dsound.dll for Xbox ^(unprotected^)
     echo   update9    - Build XAPOFX1_5.dll for Update-9 version of the game
